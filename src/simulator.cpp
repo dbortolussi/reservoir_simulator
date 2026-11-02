@@ -134,6 +134,7 @@ public :
 						dt = std::min(dt_init, dt_try * 1.5);
 						break;
 					}
+					std::cerr << "Newton step rejected: t=" << t << " s, dt_try=" << dt_try << " s, iterations=" << rep.iters << '\n';
 					dt_try *= 0.5;
 					rolls++;
 					if (dt_try < dt_min) {

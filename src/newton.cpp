@@ -160,6 +160,8 @@ inline Eigen::SparseMatrix<double> assembleJacobian(const Model& m, const Eigen:
 inline NewtonReport newtonSolve(const Model& m, Eigen::VectorXd& x,
 	const std::vector<double>& Sw_old, double dt, int max_iter = 25, double tol = 1e-6) {
 
+	int line_search_max = 20;
+
 	Eigen::VectorXd R = assembleResidual(m, x, Sw_old, dt);
 	double r0 = R.norm();
 	if (r0 == 0.0) return { true, 0 };
@@ -168,7 +170,11 @@ inline NewtonReport newtonSolve(const Model& m, Eigen::VectorXd& x,
 		Eigen::SparseMatrix<double> J = assembleJacobian(m, x, dt);
 		Eigen::SparseLU<Eigen::SparseMatrix<double>> lu;
 		lu.compute(J);
-		if (lu.info() != Eigen::Success) return { false, it };
+		if (lu.info() != Eigen::Success) {
+			std::cerr << "LU factorization failed: it=" << it << " dt=" << dt << '\n';
+    
+			return { false, it };
+		}
 		Eigen::VectorXd dx = lu.solve(-R);
 
 		double f0 = 0.5 * R.squaredNorm();
@@ -177,7 +183,7 @@ inline NewtonReport newtonSolve(const Model& m, Eigen::VectorXd& x,
 		const double beta = 0.5;
 		Eigen::VectorXd x_new = x;
 		Eigen::VectorXd R_new = R;
-		for (int ls = 0;ls < 20;++ls) {
+		for (int ls = 0;ls < line_search_max;++ls) {
 			x_new = x + alpha * dx;
 			double Swc = m.fluid.kr.Swc, Sor = m.fluid.kr.Sor;
 			for (int c = 0; c < m.grid.numCells(); ++c) {
@@ -185,9 +191,21 @@ inline NewtonReport newtonSolve(const Model& m, Eigen::VectorXd& x,
 				if (w && w->type == Well::Injector) continue;
 				x_new(2 * c + 1) = std::min(1.0 - Sor, std::max(Swc, x_new(2 * c + 1)));
 			}
+			
 			R_new = assembleResidual(m, x_new, Sw_old, dt);
-			if (0.5 * R_new.squaredNorm() <= (1.0 - c1 * alpha) * f0) break;
+
+			if (0.5 * R_new.squaredNorm() <= (1.0 - c1 * alpha) * f0)
+				break;
+
+			if (ls + 1 == line_search_max){
+			std::cerr << "Line search failed: it=" << it << " dt=" << dt
+              << " current=" << R.norm() << " trial=" << R_new.norm()
+              << " target=" << tol * (1.0 + r0) << '\n';
+				return {false, it};
+			}
+
 			alpha *= beta;
+
 		}
 		x = x_new; R = R_new;
 		int nCells = static_cast<int>(R.size() / 2);
@@ -197,7 +215,7 @@ inline NewtonReport newtonSolve(const Model& m, Eigen::VectorXd& x,
 		Eigen::VectorXd R_s = R(sIdx);
 		double p_res = R_p.norm();
 		double s_res = R_s.norm();
-		//std::cout << "P_res " << p_res << " S_res " << s_res << std::endl;
+		
 		if (R.norm() < tol * r0 + tol) {
 			return { true, it };
 		}

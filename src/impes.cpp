@@ -57,6 +57,7 @@ inline double impesStep(const Model& m, std::vector<double>& Sw, double dt_try) 
 
 	Eigen::VectorXd p = impesPressure(m, Sw);
 
+	// calculate speed limit
 	double maxSpeed = 0.0;
 	for (int c = 0; c < N; ++c) {
 		for (const Neighbor& f : g.neighbors(c)) {
@@ -65,7 +66,8 @@ inline double impesStep(const Model& m, std::vector<double>& Sw, double dt_try) 
 			double T = transmissibility(f, m.k(c), m.k(j));
 			double dp = p(c) - p(j);
 			int up = (dp >= 0.0) ? c : j;
-			double F = T * fl.lambda_t(Sw[up]) * dp;
+			double lam = 0.5 * (fl.lambda_t(Sw[c]) + fl.lambda_t(Sw[j]));
+			double F = T * lam * dp;
 			double ds = Sw[c] - Sw[j];
 			double dfw = (std::abs(ds) > 1e-12) ? (fl.fw(Sw[c]) - fl.fw(Sw[j])) / ds : fl.dfw_dSw(Sw[up]);
 			double spd = std::abs(F) * std::abs(dfw);
