@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 def test_1d_known_solution(solver: str):
 
     # assumes corey-brooks relation
+    # returns mean percent difference
 
     total_length = 100
     mu_w=1.0e-3
@@ -39,12 +40,15 @@ def test_1d_known_solution(solver: str):
     x_f = total_length / 2
     a = x_f / front_pos_to_inj_water_dist
     front_transit_time = phi / (perm * (injector_p - producer_p)) * (total_length*mu_o*a + (front_pos_to_inj_water_dist*(average_inverse_mobility-mu_o)/2) * a**2)
+    x_exact = np.r_[x_f * x_fraction, x_f, total_length]
+    Sw_exact = np.r_[Swc + mobile_sat_range * saturation_range, Swc, Swc]
 
     print(f"front transit time {front_transit_time}")
 
     nx = 200
     ny = 1
-    Lx=Ly=total_length/nx
+    Lx=total_length
+    Ly=total_length / nx
 
     K = perm * np.ones((nx, ny))
     
@@ -56,14 +60,21 @@ def test_1d_known_solution(solver: str):
     sim.set_porosity(phi)
     sim.add_well(0, 0, "injector", injector_p)
     sim.add_well(nx-1, 0, "producer", producer_p)
-
+    sim.dt_init = 3000
     res = sim.run(solver, t_end=front_transit_time)
     result=res
 
     nx, ny = result.nx, result.ny
     Sw = np.array(result.Sw_final).reshape(nx, ny)
     plt.plot(np.linspace(0, total_length, num=nx), Sw)
+    plt.plot(x_exact, Sw_exact, "k--", label="Buckley–Leverett")
     plt.show()
 
+    error = Sw[1:-1] - Sw_exact[1:-1]
+    return np.mean(100*np.abs(error/Sw_exact[1:-1]))
 
-test_1d_known_solution("newton")
+solvers = ["newton", "impes"]
+
+for solver in solvers:
+    err = test_1d_known_solution(solver)
+    print(f"Solver {solver} ran with error {err}")

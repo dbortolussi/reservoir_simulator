@@ -171,8 +171,6 @@ inline NewtonReport newtonSolve(const Model& m, Eigen::VectorXd& x,
 		Eigen::SparseLU<Eigen::SparseMatrix<double>> lu;
 		lu.compute(J);
 		if (lu.info() != Eigen::Success) {
-			std::cerr << "LU factorization failed: it=" << it << " dt=" << dt << '\n';
-    
 			return { false, it };
 		}
 		Eigen::VectorXd dx = lu.solve(-R);
@@ -198,9 +196,6 @@ inline NewtonReport newtonSolve(const Model& m, Eigen::VectorXd& x,
 				break;
 
 			if (ls + 1 == line_search_max){
-			std::cerr << "Line search failed: it=" << it << " dt=" << dt
-              << " current=" << R.norm() << " trial=" << R_new.norm()
-              << " target=" << tol * (1.0 + r0) << '\n';
 				return {false, it};
 			}
 
