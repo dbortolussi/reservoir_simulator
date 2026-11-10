@@ -12,4 +12,5 @@ struct SimResult {
 	int nx = 0, ny = 0;
 	Eigen::VectorXd Sw_final;
 	Eigen::VectorXd p_final;
+	double injected_water = 0.0;
 };

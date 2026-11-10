@@ -45,7 +45,8 @@ inline Eigen::VectorXd impesPressure(const Model& m, const std::vector<double>& 
 	return solver.solve(b);
 }
 
-inline double impesStep(const Model& m, std::vector<double>& Sw, double dt_try) {
+inline double impesStep(const Model& m, std::vector<double>& Sw, 
+					double dt_try, double* injected_water = nullptr) {
 	
 	const Grid& g = m.grid;
 	
@@ -98,6 +99,9 @@ inline double impesStep(const Model& m, std::vector<double>& Sw, double dt_try) 
 	for (int c = 0; c < N; ++c) {
 		const Well* w = m.wellAt(c);
 		if (w && w->type == Well::Injector) {
+			if (injected_water != nullptr) {
+				*injected_water -= dt * dSw[c];
+			}
 			Sw[c] = 1.0 - fl.kr.Sor;
 			continue;
 		}

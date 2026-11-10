@@ -39,12 +39,12 @@ def curve_compare(computed_curve: np.array, exact_curve: np.array):
 def test_1d_known_solution(solver: str):
 
     num_samples = 500
+    total_length = 100
+    front_point_frac = 0.75
 
     # assumes corey-brooks relation
     # returns relative area between computed and exact saturation curves
 
-    total_length = 100
-    front_point_frac = 0.75
     mu_w=1.0e-3
     mu_o=5.0e-3
     phi=0.2

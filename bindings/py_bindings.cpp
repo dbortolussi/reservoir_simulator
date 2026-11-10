@@ -19,6 +19,7 @@ PYBIND11_MODULE(pyressim, m) {
 		.def_readonly("breakthrough_time", &SimResult::breakthrough_time)
 		.def_readonly("nx", &SimResult::nx)
 		.def_readonly("ny", &SimResult::ny)
+		.def_readonly("injected_water", &SimResult::injected_water)
 		.def_property_readonly("Sw_final", [](const SimResult& r) {return r.Sw_final;})
 		.def_property_readonly("p_final", [](const SimResult& r) {return r.p_final;});
 

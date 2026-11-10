@@ -42,14 +42,15 @@ def killer_case(nx, ny, k_bg=1e-13, k_barrier=1e-18):
     return K
 
 
-def log_correlated_gaussian(n, mean=0.0, covariance_matrix=None, scale=1e-13, seed=1):
+def log_correlated_gaussian(n, mean=0.0, sigma=1.0, covariance_matrix=None, scale=1e-13, seed=1):
     rng = np.random.default_rng(seed)
-    if covariance_matrix == None:
+    if covariance_matrix is None:
         random_matrix = rng.random((n, n))
-        covariance_matrix = (random_matrix @ random_matrix.T) + 1e-8 * np.eye(n)
+        covariance_matrix = (random_matrix @ random_matrix.T) 
     if (n, n) != covariance_matrix.shape:
         raise ValueError(f"Covariance matrix must have shape {n} X {n}, not {covariance_matrix.shape}")    
     normal = rng.normal(0.0, 1.0, size=(n, n))
-    cholesky = np.linalg.cholesky(covariance_matrix)
-    return scale * np.exp(mean + cholesky @ normal)
+    cholesky = np.linalg.cholesky(covariance_matrix + 1e-8 * np.eye(n))
+    ret = np.exp(mean + sigma * cholesky @ normal @ cholesky.T)
+    return scale * ret
 

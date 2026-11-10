@@ -108,7 +108,7 @@ public :
 			double dt_used;
 
 			if (solver == "impes") {
-				dt_used = impesStep(model, Sw, std::min(dt, t_end - t));
+				dt_used = impesStep(model, Sw, std::min(dt, t_end - t), &res.injected_water);
 			}
 			else {
 				std::vector<double> Sw_old = Sw;
@@ -131,6 +131,7 @@ public :
 							Sw[c] = x(2 * c + 1);
 						}
 						dt_used = dt_try;
+						res.injected_water += dt_used * injectorWaterRate(p, Sw);
 						dt = std::min(dt_init, dt_try * 1.5);
 						break;
 					}
@@ -174,5 +175,26 @@ private:
 		}
 		return mx;
 	}
+
+	double injectorWaterRate(const Eigen::VectorXd& p,
+                         const std::vector<double>& Sw) const {
+		double rate = 0.0;
+
+		for (const Well& well : model.wells) {
+			if (well.type != Well::Injector) continue;
+
+			const int c = well.cell;
+			for (const Neighbor& face : model.grid.neighbors(c)) {
+				const int j = face.id;
+				const double dp = p(c) - p(j);
+				const int upwind = (dp >= 0.0) ? c : j;
+				const double T = transmissibility(face, model.k(c), model.k(j));
+
+				rate += T * model.fluid.lambda_w(Sw[upwind]) * dp;
+			}
+		}
+
+		return rate;
+	}	
 
 };
