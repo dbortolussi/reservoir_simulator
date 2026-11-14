@@ -104,7 +104,7 @@ def main():
                 sim.dt_init = sim.dt_min = t
                 result_newton = sim.run("newton", t_end=t_total)
                 Sw = result_newton.Sw_final
-                error = np.mean(np.abs(Sw - Sw_ref))
+                error = np.mean(np.abs(Sw - Sw_ref)) / np.mean(np.abs(Sw_ref))
                 if np.isfinite(error) and error < .1:
                     t_l = t
                     continue
